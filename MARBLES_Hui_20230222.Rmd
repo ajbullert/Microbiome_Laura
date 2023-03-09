@@ -1,0 +1,172 @@
+---
+title: "Microbiome MARBLES HUI"
+output: html_notebook
+---
+
+#Load libraries
+```{r include=FALSE}
+library(ggplot2)
+library(rgl)
+library(tidyr)
+library(RColorBrewer)
+library(expss)
+library(dplyr)
+library(BiocManager)
+library(GenomicAlignments)
+library(BiocParallel)
+library(GenomicFeatures)
+library(Rsubread)
+library(DESeq2)
+library(Rsamtools)
+library(pheatmap)
+library(AnnotationDbi)
+library(Rattus.norvegicus)
+library(TxDb.Rnorvegicus.UCSC.rn6.refGene)
+library(topGO)
+library(gridExtra)
+library(clusterProfiler)
+library(fgsea)
+library(factoextra)
+library(tidyverse)
+library(pathview)
+library(readxl)
+library(stringr)
+```
+
+
+```{r}
+y<- read_xlsx("2023-01-25 Pregnant MARBLES PiCRUST results.xlsx")
+y<-as.data.frame(y)
+
+```
+
+
+
+#**Dose 1: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$Low, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$Low
+
+names(gene_list)<-z$`#NAME`
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/Pregnant_MARBLES_Low_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/Pregnant_MARBLES_Low_KEGG_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("Pregnant MARBLES Low KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```
+
+```{r}
+# Produce the native KEGG plot (PNG)
+map<- pathview(gene.data=gene_list, pathway.id="02010", species = kegg_organism)
+
+```
+
+
+#**Dose 2: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$Middle, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$Middle
+
+names(gene_list)<-z$`#NAME`
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/Pregnant_MARBLES_Middle_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/Pregnant_MARBLES_Middle_KEGG_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("Pregnant MARBLES Middle KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```
+#**Dose 3: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$High, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$High
+
+names(gene_list)<-z$`#NAME`
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/Pregnant_MARBLES_High_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/Pregnant_MARBLES_High_KEGG_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("Pregnant MARBLES High KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```

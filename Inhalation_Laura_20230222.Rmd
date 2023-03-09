@@ -1,0 +1,379 @@
+---
+title: "Microbiome Inhalation Laura"
+output: html_notebook
+---
+
+#Load libraries
+```{r include=FALSE}
+library(ggplot2)
+library(tidyr)
+library(RColorBrewer)
+library(expss)
+library(dplyr)
+library(BiocManager)
+library(GenomicAlignments)
+library(GenomicFeatures)
+library(AnnotationDbi)
+library(Rattus.norvegicus)
+library(EnhancedVolcano)
+library(TxDb.Rnorvegicus.UCSC.rn6.refGene)
+library(topGO)
+library(gridExtra)
+library(clusterProfiler)
+library(fgsea)
+library(factoextra)
+library(tidyverse)
+library(pathview)
+library(readxl)
+library(stringr)
+library(colorRamps)
+```
+
+```{r}
+y<- read_xlsx("2023-01-25 PCB52 Inhalation 28 Day PiCRUST results.xlsx")
+y<-as.data.frame(y)
+
+```
+
+#females
+#**Dose 1: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$FemaleCecum, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$FemaleCecum
+
+names(gene_list)<-z$`#NAME`
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/Female_cecum_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/Female_Cecum_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("Female Cecum KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```
+
+```{r}
+# Produce the native KEGG plot (PNG)
+map<- pathview(gene.data=gene_list, pathway.id="02010", species = kegg_organism)
+
+```
+
+#**Dose 2: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$FemaleColon, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$FemaleColon
+
+names(gene_list)<-z$`#NAME`
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/Female_colon_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/Female_Colon_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("Female Colon KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```
+
+#**Dose 3: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$FemaleIleum, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$FemaleIleum
+
+names(gene_list)<-z$`#NAME`
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/Female_ileum_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/Female_ileum_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("Female Ileum KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```
+
+#**Dose 4: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$FemaleJejunum, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$FemaleJejunum
+
+names(gene_list)<-z$`#NAME`
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/Female_Jejunum_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/Female_Jejunum_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("Female Jejunum KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```
+
+
+#males
+
+#**Dose 1: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$MaleCecum, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$MaleCecum
+
+names(gene_list)<-z$`#NAME`
+gene_list[gene_list==0] <- NA
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 1,
+               maxGSSize    = 800000,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/Male_cecum_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/Male_Cecum_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("Male Cecum KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```
+
+#**Dose 2: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$MaleColon, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$MaleColon
+
+names(gene_list)<-z$`#NAME`
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/Male_colon_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/Male_Colon_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("Male Colon KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))   
+dot
+dev.off()
+dot
+```
+
+#**Dose 3: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$MaleIleum, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$MaleIleum
+
+names(gene_list)<-z$`#NAME`
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/Male_ileum_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/Male_ileum_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("Male Ileum KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))   
+dot
+dev.off()
+dot
+```
+
+#**Dose 4: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$MaleJejunum, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$MaleJejunum
+
+names(gene_list)<-z$`#NAME`
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/Male_Jejunum_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/Male_Jejunum_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("Male Jejunum KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))   
+dot
+dev.off()
+dot
+```
+
+```{r}
+# Produce the native KEGG plot (PNG)
+male_liver <- pathview(gene.data=gene_list, pathway.id="00190", species = kegg_organism)
+
+```
