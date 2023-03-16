@@ -1,0 +1,265 @@
+---
+title: "Microbiome SAM exposure"
+output: html_notebook
+---
+
+#Load libraries
+```{r include=FALSE}
+library(ggplot2)
+library(rgl)
+library(tidyr)
+library(RColorBrewer)
+library(expss)
+library(dplyr)
+library(BiocManager)
+library(Rsamtools)
+library(GenomicAlignments)
+library(BiocParallel)
+library(GenomicFeatures)
+library(Rsubread)
+library(DESeq2)
+library(Rsamtools)
+library(pheatmap)
+library(AnnotationDbi)
+library(Rattus.norvegicus)
+library(EnhancedVolcano)
+library(TxDb.Rnorvegicus.UCSC.rn6.refGene)
+library(topGO)
+library(gridExtra)
+library(DOSE)
+library(clusterProfiler)
+library(fgsea)
+library(factoextra)
+library(tidyverse)
+library(pathview)
+library(readxl)
+library(stringr)
+```
+
+prep the matrix to calculate LFC
+```{r}
+y<- read.csv("SAM_exposure_samples.csv", header = F)
+y<-t(y)
+y<-as.data.frame(y)
+colnames(y)<-y[1,]
+y<- y[-1,]
+colnames(y)[1]<-"group"
+```
+
+
+```{r}
+y$group<-factor(y$group)
+
+i <- c(2:6911) 
+y[ , i] <- apply(y[ , i], 2,            # Specify own function within apply
+                    function(x) as.numeric(as.character(x)))
+```
+
+
+
+```{r}
+res=aggregate(.~group,y,mean)
+df<-t(res)
+colnames(df)<-df[1,]
+df<-df[-1,]
+df<-as.data.frame(df)
+i <- c(1:8) 
+df[ , i] <- apply(df[ , i], 2,            # Specify own function within apply
+                    function(x) as.numeric(as.character(x)))
+```
+
+
+```{r}
+lfc1 <- function(a, b) log((b-a)/a + 1)
+```
+
+```{r}
+combs <- combn(colnames(df), 2)
+logfoldchanges <- apply(combs, 2, function(col_names) lfc1(df[, col_names[1]], df[, col_names[2]]))
+
+
+```
+
+```{r}
+dimnames(logfoldchanges)[[2]] <- apply(combs, 2, paste, collapse = '_')
+row.names(logfoldchanges)<-rownames(df)
+```
+
+
+```{r}
+y<-logfoldchanges[,c(4,11,17,22)]
+y<-as.data.frame(y)
+```
+
+
+#**Dose 1: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$SAM_1_Sham_1, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$SAM_1_Sham_1
+
+names(gene_list)<-rownames(z)
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/SAM_Week_1_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/SAM_Week_1_KEGG_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("SAM Week 1 KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```
+
+```{r}
+# Produce the native KEGG plot (PNG)
+male_liver <- pathview(gene.data=gene_list, pathway.id="04010", species = kegg_organism)
+
+```
+
+#**Dose 2: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$SAM_2_Sham_2, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$SAM_2_Sham_2
+
+names(gene_list)<-rownames(z)
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/SAM_Week_2_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/SAM_Week_2_KEGG_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("SAM Week 2 KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```
+
+#**Dose 3: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$SAM_3_Sham_3, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$SAM_3_Sham_3
+
+names(gene_list)<-rownames(z)
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+sum(is.na(gene_list))
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 3,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/SAM_Week_3_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/SAM_Week_3_KEGG_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("SAM Week 3 KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```
+
+#**Dose 4: gene enrichment analysis (GSEA)**
+```{r}
+z<- y[order(y$SAM_4_Sham_4, decreasing = TRUE),] #reorder the genes based on significance
+
+gene_list<-z$SAM_4_Sham_4
+
+names(gene_list)<-rownames(z)
+gene_list[!is.finite(gene_list)] <- NA
+gene_list<-na.omit(gene_list)
+gene_list <- gene_list[!duplicated(names(gene_list))]
+head(gene_list)
+```
+
+#KEGG pathview
+```{r}
+kegg_organism = "ko"
+kk2 <- gseKEGG(geneList     = gene_list,
+               organism     = kegg_organism,
+               minGSSize    = 1,
+               maxGSSize    = 800,
+               pvalueCutoff = 0.05,
+               pAdjustMethod = "none",
+               keyType       = "kegg")
+
+data<-data.frame(kk2)
+write.csv(data ,file="KEGG_results/SAM_Week_4_KEGG_enrichment.csv")
+```
+
+```{r}
+tiff(file = 'enrichment_plots/SAM_Week_4_KEGG_enrichment.tiff', units="in", width=10, height=5, res=1000)
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
+  scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
+  facet_grid(.~.sign)+
+  ggtitle("SAM Week 4 KEGG Enrichment")+                                                           # Change font size
+  theme(strip.text.x = element_text(size = 12))+
+  theme(axis.text.y = element_text(size = 12))    
+
+dot
+dev.off()
+dot
+```
