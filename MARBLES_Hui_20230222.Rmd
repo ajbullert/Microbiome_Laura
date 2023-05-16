@@ -35,20 +35,80 @@ library(stringr)
 
 
 ```{r}
-y<- read_xlsx("2023-01-25 Pregnant MARBLES PiCRUST results.xlsx")
+y<- read.csv("2023-05-15 picrust results pregnant MARBLES.csv", header = F)
 y<-as.data.frame(y)
 
+```
+
+
+prep the matrix to calculate LFC
+```{r}
+y<-t(y)
+y<-as.data.frame(y)
+colnames(y)<-y[1,]
+y<- y[-1,]
+colnames(y)[1]<-"group"
+
+y$group<-sub("C.", "Veh", y$group)
+y$group<-sub("L.", "Low", y$group)
+y$group<-sub("M.", "Med", y$group)
+y$group<-sub("H.", "High", y$group)
+```
+
+
+```{r}
+y$group<-factor(y$group)
+
+i <- c(2:6911) 
+y[ , i] <- apply(y[ , i], 2,            # Specify own function within apply
+                    function(x) as.numeric(as.character(x)))
+```
+
+
+
+```{r}
+res=aggregate(.~group,y,mean)
+df<-t(res)
+colnames(df)<-df[1,]
+df<-df[-1,]
+df<-as.data.frame(df)
+i <- c(1:4) 
+df[ , i] <- apply(df[ , i], 2,            # Specify own function within apply
+                    function(x) as.numeric(as.character(x)))
+```
+
+
+```{r}
+lfc1 <- function(a, b) log((b-a)/a + 1)
+```
+
+```{r}
+combs <- combn(colnames(df), 2)
+logfoldchanges <- apply(combs, 2, function(col_names) lfc1(df[, col_names[1]], df[, col_names[2]]))
+
+
+```
+
+```{r}
+dimnames(logfoldchanges)[[2]] <- apply(combs, 2, paste, collapse = '_')
+row.names(logfoldchanges)<-rownames(df)
+```
+
+
+```{r}
+y<-logfoldchanges[,c(3,5,6)]
+y<-as.data.frame(y)
 ```
 
 
 
 #**Dose 1: gene enrichment analysis (GSEA)**
 ```{r}
-z<- y[order(y$Low, decreasing = TRUE),] #reorder the genes based on significance
+z<- y[order(y$Low_Veh, decreasing = TRUE),] #reorder the genes based on significance
 
-gene_list<-z$Low
+gene_list<-z$Low_Veh
 
-names(gene_list)<-z$`#NAME`
+names(gene_list)<-rownames(z)
 gene_list<-na.omit(gene_list)
 gene_list <- gene_list[!duplicated(names(gene_list))]
 head(gene_list)
@@ -92,11 +152,11 @@ map<- pathview(gene.data=gene_list, pathway.id="02010", species = kegg_organism)
 
 #**Dose 2: gene enrichment analysis (GSEA)**
 ```{r}
-z<- y[order(y$Middle, decreasing = TRUE),] #reorder the genes based on significance
+z<- y[order(y$Med_Veh, decreasing = TRUE),] #reorder the genes based on significance
 
-gene_list<-z$Middle
+gene_list<-z$Med_Veh
 
-names(gene_list)<-z$`#NAME`
+names(gene_list)<-rownames(z)
 gene_list<-na.omit(gene_list)
 gene_list <- gene_list[!duplicated(names(gene_list))]
 head(gene_list)
@@ -132,12 +192,14 @@ dot
 ```
 #**Dose 3: gene enrichment analysis (GSEA)**
 ```{r}
-z<- y[order(y$High, decreasing = TRUE),] #reorder the genes based on significance
+z<- y[order(y$High_Veh, decreasing = TRUE),] #reorder the genes based on significance
 
-gene_list<-z$High
+gene_list<-z$High_Veh
 
-names(gene_list)<-z$`#NAME`
+names(gene_list)<-rownames(z)
+gene_list[!is.finite(gene_list)] <- NA
 gene_list<-na.omit(gene_list)
+
 gene_list <- gene_list[!duplicated(names(gene_list))]
 head(gene_list)
 ```

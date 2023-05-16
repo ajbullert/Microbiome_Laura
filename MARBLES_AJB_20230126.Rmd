@@ -43,20 +43,79 @@ library(stringr)
 
 
 ```{r}
-y<- read_xlsx("2023-01-25 MARBLES PiCRUST results.xlsx")
+y<- read.csv("2023-05-16 picrust results nonpregnant MARBLES.csv", header = F)
 y<-as.data.frame(y)
 
 ```
 
 
+
+prep the matrix to calculate LFC
+```{r}
+y<-t(y)
+y<-as.data.frame(y)
+colnames(y)<-y[1,]
+y<- y[-1,]
+colnames(y)[1]<-"group"
+
+```
+
+
+```{r}
+y$group<-factor(y$group)
+
+i <- c(2:6911) 
+y[ , i] <- apply(y[ , i], 2,            # Specify own function within apply
+                    function(x) as.numeric(as.character(x)))
+```
+
+
+
+```{r}
+res=aggregate(.~group,y,mean)
+df<-t(res)
+colnames(df)<-df[1,]
+df<-df[-1,]
+df<-as.data.frame(df)
+i <- c(1:4) 
+df[ , i] <- apply(df[ , i], 2,            # Specify own function within apply
+                    function(x) as.numeric(as.character(x)))
+```
+
+
+```{r}
+lfc1 <- function(a, b) log((b-a)/a + 1)
+```
+
+```{r}
+combs <- combn(colnames(df), 2)
+logfoldchanges <- apply(combs, 2, function(col_names) lfc1(df[, col_names[1]], df[, col_names[2]]))
+
+
+```
+
+```{r}
+dimnames(logfoldchanges)[[2]] <- apply(combs, 2, paste, collapse = '_')
+row.names(logfoldchanges)<-rownames(df)
+```
+
+
+```{r}
+y<-logfoldchanges[,c(3,5,6)]
+y<-as.data.frame(y)
+```
+
+
+
 #females
 #**Dose 1: gene enrichment analysis (GSEA)**
 ```{r}
-z<- y[order(y$`0.1 mg/kg`, decreasing = TRUE),] #reorder the genes based on significance
+z<- y[order(y$`    0.1_veh`, decreasing = TRUE),] #reorder the genes based on significance
 
-gene_list<-z$`0.1 mg/kg`
+gene_list<-z$`    0.1_veh`
 
-names(gene_list)<-z$`#NAME`
+names(gene_list)<-rownames(z)
+gene_list[!is.finite(gene_list)] <- NA
 gene_list<-na.omit(gene_list)
 gene_list <- gene_list[!duplicated(names(gene_list))]
 head(gene_list)
@@ -99,11 +158,12 @@ male_liver <- pathview(gene.data=gene_list, pathway.id="04010", species = kegg_o
 
 #**Dose 2: gene enrichment analysis (GSEA)**
 ```{r}
-z<- y[order(y$`1 mg/kg`, decreasing = TRUE),] #reorder the genes based on significance
+z<- y[order(y$`    1_veh`, decreasing = TRUE),] #reorder the genes based on significance
 
-gene_list<-z$`1 mg/kg`
+gene_list<-z$`    1_veh`
 
-names(gene_list)<-z$`#NAME`
+names(gene_list)<-rownames(z)
+gene_list[!is.finite(gene_list)] <- NA
 gene_list<-na.omit(gene_list)
 gene_list <- gene_list[!duplicated(names(gene_list))]
 head(gene_list)
@@ -140,11 +200,12 @@ dot
 
 #**Dose 3: gene enrichment analysis (GSEA)**
 ```{r}
-z<- y[order(y$`10 mg/kg`, decreasing = TRUE),] #reorder the genes based on significance
+z<- y[order(y$`    6_veh`, decreasing = TRUE),] #reorder the genes based on significance
 
-gene_list<-z$`10 mg/kg`
+gene_list<-z$`    6_veh`
 
-names(gene_list)<-z$`#NAME`
+names(gene_list)<-rownames(z)
+gene_list[!is.finite(gene_list)] <- NA
 gene_list<-na.omit(gene_list)
 gene_list <- gene_list[!duplicated(names(gene_list))]
 head(gene_list)
@@ -167,7 +228,7 @@ write.csv(data ,file="KEGG_results/MARBLES_6_KEGG_enrichment.csv")
 
 ```{r}
 tiff(file = 'enrichment_plots/MARBLES_6_KEGG_enrichment.tiff', units="in", width=10, height=5, res=1000)
-dot<-dotplot(kk2, showCategory=10, split=".sign")+
+dot<-dotplot(kk2, showCategory=5, split=".sign")+
   scale_color_distiller(palette = "RdYlBu", trans= "reverse")+
   facet_grid(.~.sign)+
   ggtitle("MARBLES 6 mg/kg KEGG Enrichment")+                                                           # Change font size
