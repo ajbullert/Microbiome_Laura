@@ -29,11 +29,67 @@ library(stringr)
 library(colorRamps)
 ```
 
+#prep the matrix to calculate LFC
 ```{r}
-y<- read_xlsx("2023-01-25 PCB52 Inhalation 28 Day PiCRUST results.xlsx")
+y<- read.csv("functionalprof_picrust_gg13_colon.csv", header = F)
+y<-t(y)
+#y<-as.data.frame(y)
+colnames(y)<-y[1,]
+y<- y[-1,]
+colnames(y)[1]<-"group"
 y<-as.data.frame(y)
+y$K000
+```
+
+
+```{r}
+y$group<-factor(y$group)
+
+i <- c(2:6911) 
+y[ , i] <- apply(y[ , i], 2,            # Specify own function within apply
+                    function(x) as.numeric(as.character(x)))
+```
+
+
+
+```{r}
+res=aggregate(.~group,y,mean)
+df<-t(res)
+colnames(df)<-df[1,]
+df<-df[-1,]
+df<-as.data.frame(df)
+i <- c(1:8) 
+df[ , i] <- apply(df[ , i], 2,            # Specify own function within apply
+                    function(x) as.numeric(as.character(x)))
+```
+
+
+```{r}
+lfc1 <- function(a, b) log((b-a)/a + 1)
+```
+
+```{r}
+combs <- combn(colnames(df), 2)
+logfoldchanges <- apply(combs, 2, function(col_names) lfc1(df[, col_names[1]], df[, col_names[2]]))
+
 
 ```
+
+```{r}
+dimnames(logfoldchanges)[[2]] <- apply(combs, 2, paste, collapse = '_')
+row.names(logfoldchanges)<-rownames(df)
+```
+
+
+```{r}
+y<-logfoldchanges[,c(4,11,17,22)]
+y<-as.data.frame(y)
+```
+
+
+
+
+
 
 #females
 #**Dose 1: gene enrichment analysis (GSEA)**
